@@ -18,7 +18,7 @@ await db.connect();
 let countryCodes = [];
 
 async function addNewCountry(countryCode) {
-    db.query("INSERT INTO visited_country (country_code) VALUES ($1)", [countryCode]);
+    await db.query("INSERT INTO visited_country (country_code) VALUES ($1)", [countryCode]);
 }
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -27,14 +27,16 @@ app.use(express.static("public"));
 app.get("/", async (req, res) => {
   const result = await db.query("SELECT country_code FROM visited_country");
   const countryCodes = result.rows.map(r => r.country_code);
-  res.render("index.ejs", { countries: countryCodes, total: countryCodes.length });
+  res.render("index.ejs", { countries: countryCodes, total: countryCodes.length-1 });
 });
 
 
 // placeholder until you implement it properly
 app.post("/add",  async(req, res) => {
   const newCountry = req.body.country;
-  if (newCountry && !!!countryCodes.includes(newCountry)) {
+  const result = await db.query("SELECT country_code FROM visited_country WHERE country_code = $1", [newCountry]);
+  if (newCountry && !result.rows.length) {
+
     await addNewCountry(newCountry);
     // Note: In a real app, you should also insert into the database here
     console.log(`Added new country code: ${newCountry}`);
